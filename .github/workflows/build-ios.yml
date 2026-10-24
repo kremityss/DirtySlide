@@ -1,0 +1,69 @@
+name: Build DirtySlide iOS unsigned
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-ios.yml'
+      - 'DirtySlide/**'
+      - 'DirtySlide.xcodeproj/**'
+      - 'UI/**'
+      - 'Libraries/**'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+
+      - name: Xcode diagnostics
+        shell: bash
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project DirtySlide.xcodeproj
+
+      - name: Build iOS app
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project DirtySlide.xcodeproj \
+            -target DirtySlide \
+            -configuration Release \
+            -sdk iphoneos \
+            -arch arm64 \
+            SYMROOT="$PWD/build" \
+            IPHONEOS_DEPLOYMENT_TARGET=26.0 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build 2>&1 | tee xcodebuild.log
+
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$(find "$PWD/build" -type d -name DirtySlide.app -print -quit)"
+          test -n "$APP" || { echo "Missing built DirtySlide.app"; exit 1; }
+          mkdir -p unsigned/Payload
+          cp -R "$APP" unsigned/Payload/DirtySlide.app
+          (cd unsigned && zip -qry ../DirtySlide-unsigned.ipa Payload)
+          unzip -t DirtySlide-unsigned.ipa
+
+      - name: Upload unsigned IPA and build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DirtySlide-iOS-build-results
+          path: |
+            DirtySlide-unsigned.ipa
+            xcodebuild.log
+          if-no-files-found: warn
