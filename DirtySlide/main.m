@@ -10,7 +10,7 @@
 int minimal_CVE_2026_43724(void);
 
 int cmain(uint64_t *sp0);
-__attribute__((no_stack_protector))
+__attribute__((no_stack_protector, used, visibility("default")))
 int CVE_2026_dyld(void) {
     int fd;
     const char *cache = "/System/Cryptexes/OS/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e";
