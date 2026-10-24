@@ -23,6 +23,14 @@
         },
         @"dyld": ^{
             int (*CVE_2026_dyld)(void) = dlsym(RTLD_DEFAULT, "CVE_2026_dyld");
+            if (!CVE_2026_dyld) {
+                UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Diagnostic unavailable"
+                    message:@"CVE_2026_dyld was not found in the executable export table. No kernel test was run."
+                    preferredStyle:UIAlertControllerStyleAlert];
+                [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+                [self presentViewController:alert animated:YES completion:nil];
+                return;
+            }
             CVE_2026_dyld();
         },
     };
