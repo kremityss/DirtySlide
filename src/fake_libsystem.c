@@ -28,7 +28,7 @@
         "ret\n\t" \
     );
 #define WRAP_DYLD(func) \
-    static void* dyld_##func; \
+    __attribute__((used)) static void* dyld_##func; \
     __asm__( \
         ".global _" #func "\n\t" \
         "_" #func ":\n\t" \
